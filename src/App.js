@@ -1,46 +1,57 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux'
 
 import { CardList } from './components/card-list/card-list.component'
 import { SearchBox } from './components/search-box/search-box.component'
 
 import './App.css';
 
-class App extends Component {
-  constructor(){
-    super()
+import { setSearchField, requestRobots } from './actions.js'
 
-    this.state = {
-      monsters: [],
-      seachField: ''
-    }
-  }
-
-  componentDidMount() {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(data => data.json())
-        .then(users => this.setState({ monsters: users}))
-  }
-
-  handleChange = e => {
-    this.setState({ seachField: e.target.value })
-  }
-
-  render(){
-    const { monsters, seachField } = this.state
-    const filteredMonsters = monsters.filter(monster =>
-      monster.name.toLowerCase().includes(seachField.toLowerCase())
-    )
-    return (
-      <div className="App">
-      <h1>Monsters Rolodex</h1>
-        <SearchBox
-          placeholder='search monsters'
-          handleChange={this.handleChange}
-        />
-        <CardList monsters={filteredMonsters} />
-      </div>
-    )
+const mapStateToProps = state => {
+  return {
+    searchField: state.searchRobots.searchField,
+    robots: state.requestRobots.robots,
+    isPending: state.requestRobots.isPending,
+    error: state.requestRobots.error
   }
 }
 
-export default App;
+const mapDispatchToProps = dispatch => {
+  return {
+    handleChange: (event) => dispatch(setSearchField(event.target.value)),
+    handleRequestRobots: () => dispatch(requestRobots())
+  }
+}
+
+class App extends Component {
+
+  componentDidMount() {
+    this.props.handleRequestRobots()
+  }
+
+  render(){
+    const { searchField, handleChange, robots, isPending } = this.props
+    const filteredMonsters = robots.filter(monster =>
+      monster.name.toLowerCase().includes(searchField.toLowerCase())
+    )
+    if (isPending) {
+      return (
+        <h1 style={{textAlign: "center"}}>Please wait</h1>
+      )
+    } else {
+      return (
+        <div className="App">
+        <h1>Monsters Rolodex</h1>
+          <SearchBox
+            placeholder='search monsters'
+            handleChange={handleChange}
+          />
+          <CardList monsters={filteredMonsters} />
+        </div>
+      )
+    }
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
